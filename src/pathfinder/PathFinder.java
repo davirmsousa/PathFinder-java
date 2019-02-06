@@ -2,7 +2,6 @@ package pathfinder;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Objects;
 import pathfinder.Enum.CellValueEnum;
 import pathfinder.Model.Cell;
 import pathfinder.Util.Tuple;
@@ -12,21 +11,33 @@ import pathfinder.Util.Tuple;
  */
 public class PathFinder
 {
-    public Cell[][] matrix;
+    private Cell nextCell;
+    private Cell[][] matrix;
+    private Cell currentCell;
+    private Cell nextdestination;
     public final int LineLength = 14;
     public final int ColumnLength = 15;
-    private final ArrayList<Tuple<Integer, Integer>> destinations;
-    private final ArrayList<String> errors;
+    public final ArrayList<String> errors;
+    private final boolean DIAGONALLY = true;
+    private final ArrayList<Cell> destinations;
 
     /**
      * Constructor
+     * @param currentCell The current cell that the user is
      * @param destinations An ArrayList filled with all destinations
     */
-    public PathFinder(ArrayList<Tuple<Integer, Integer>> destinations)
+    public PathFinder(Tuple<Integer, Integer> currentCell, ArrayList<Tuple<Integer, Integer>> destinations)
     {
-        this.errors = new ArrayList<>();
-        this.destinations = destinations;
-        matrix = InitMatrix(LineLength, ColumnLength);
+        this.matrix = InitMatrix(LineLength, ColumnLength);
+        this.currentCell = GetStatPoint(currentCell);
+        this.nextdestination = new Cell();
+        FillMatrixObstacles();
+        this.destinations = SortDestinations(this.currentCell, GetDestinations(destinations));
+        if(this.destinations.size() > 0)
+        {
+            this.nextdestination = this.destinations.get(0);
+        }
+        this.errors = SetCurrentPoint(currentCell);
     }
     
     /**
@@ -42,14 +53,103 @@ public class PathFinder
         {
             for (int j = 0; j < columns; j++)
             {
-                _matrix[i][j] = new Cell( new ArrayList<>(), 0, 0, 0, false, CellValueEnum.WALKABLE.Value, i, j );
+                _matrix[i][j] = initCell( i, j );
             }
         }
         return _matrix;
     }
     
     /**
-     * Method to print the matrix on console
+     * Temporary method to fill the matrix with obstacles
+     */
+    private void FillMatrixObstacles()
+    {
+        ArrayList<Tuple<Integer, Integer>> obstacles = new ArrayList<>();
+        obstacles.add(new Tuple<>(0, 0));
+        obstacles.add(new Tuple<>(1, 0));
+        obstacles.add(new Tuple<>(2, 0));
+        obstacles.add(new Tuple<>(3, 0));
+        obstacles.add(new Tuple<>(4, 0));
+        obstacles.add(new Tuple<>(5, 0));
+        obstacles.add(new Tuple<>(6, 0));
+        obstacles.add(new Tuple<>(7, 0));
+        obstacles.add(new Tuple<>(8, 0));
+        obstacles.add(new Tuple<>(9, 0));
+        obstacles.add(new Tuple<>(12, 0));
+        obstacles.add(new Tuple<>(11, 0));
+        obstacles.add(new Tuple<>(10, 0));
+        obstacles.add(new Tuple<>(0, 11));
+        obstacles.add(new Tuple<>(0, 1));
+        obstacles.add(new Tuple<>(0, 2));
+        obstacles.add(new Tuple<>(0, 3));
+        obstacles.add(new Tuple<>(0, 4));
+        obstacles.add(new Tuple<>(0, 5));
+        obstacles.add(new Tuple<>(0, 6));
+        obstacles.add(new Tuple<>(0, 7));
+        obstacles.add(new Tuple<>(0, 8));
+        obstacles.add(new Tuple<>(0, 9));
+        obstacles.add(new Tuple<>(0, 10));
+        obstacles.add(new Tuple<>(2, 3));
+        obstacles.add(new Tuple<>(6, 3));
+        obstacles.add(new Tuple<>(5, 3));
+        obstacles.add(new Tuple<>(4, 3));
+        obstacles.add(new Tuple<>(3, 3));
+        obstacles.add(new Tuple<>(2, 6));
+        obstacles.add(new Tuple<>(2, 4));
+        obstacles.add(new Tuple<>(2, 5));
+        obstacles.add(new Tuple<>(6, 6));
+        obstacles.add(new Tuple<>(6, 4));
+        obstacles.add(new Tuple<>(6, 5));
+        obstacles.add(new Tuple<>(3, 6));
+        obstacles.add(new Tuple<>(4, 6));
+        obstacles.add(new Tuple<>(5, 6));
+        obstacles.add(new Tuple<>(9, 3));
+        obstacles.add(new Tuple<>(12, 3));
+        obstacles.add(new Tuple<>(12, 6));
+        obstacles.add(new Tuple<>(9, 6));
+        obstacles.add(new Tuple<>(9, 4));
+        obstacles.add(new Tuple<>(9, 5));
+        obstacles.add(new Tuple<>(12, 4));
+        obstacles.add(new Tuple<>(12, 5));
+        obstacles.add(new Tuple<>(3, 8));
+        obstacles.add(new Tuple<>(11, 8));
+        obstacles.add(new Tuple<>(10, 8));
+        obstacles.add(new Tuple<>(9, 8));
+        obstacles.add(new Tuple<>(8, 8));
+        obstacles.add(new Tuple<>(7, 8));
+        obstacles.add(new Tuple<>(6, 8));
+        obstacles.add(new Tuple<>(5, 8));
+        obstacles.add(new Tuple<>(4, 8));
+        obstacles.add(new Tuple<>(2, 12));
+        obstacles.add(new Tuple<>(5, 12));
+        obstacles.add(new Tuple<>(4, 12));
+        obstacles.add(new Tuple<>(3, 12));
+        obstacles.add(new Tuple<>(9, 12));
+        obstacles.add(new Tuple<>(12, 12));
+        obstacles.add(new Tuple<>(11, 12));
+        obstacles.add(new Tuple<>(10, 12));
+        obstacles.add(new Tuple<>(9, 14));
+        obstacles.add(new Tuple<>(10, 14));
+        obstacles.add(new Tuple<>(11, 14));
+        obstacles.add(new Tuple<>(12, 14));
+        obstacles.forEach((obstacle) -> {
+            this.matrix[obstacle.key][obstacle.value].setValue(CellValueEnum.OBSTACLE.Value);
+        });
+    }
+    
+    /**
+     * Method to init a Cell object
+     * @param x Position X of the Cell in matrix
+     * @param y Position Y of the Cell in matrix
+     * @return A new instance of a Cell object
+     */
+    private Cell initCell(int x, int y)
+    {
+        return new Cell( null, 0, 0, 0, false, CellValueEnum.WALKABLE.Value, x, y );
+    }
+    
+    /**
+     * Temporary method to print the matrix on console
      */
     public void ShowMatrix()
     {
@@ -100,9 +200,10 @@ public class PathFinder
     
     /**
      * Method to get an ArrayList of Cell with destinations
+     * @param destinations An ArrayList with Tuples of destionations
      * @return ArrayList with Cell destinations
      */
-    public ArrayList<Cell> GetDestinations()
+    private ArrayList<Cell> GetDestinations(ArrayList<Tuple<Integer, Integer>> destinations)
     {
         ArrayList<Cell> _destinations = new ArrayList<>();
         destinations.forEach((destin) ->
@@ -122,13 +223,13 @@ public class PathFinder
      * @param position A tuple object with the position of the cell on metrix
      * @return <code>null</code> if the cell was not found; <code>Cell</code> if the cell was found
      */
-    public Cell GetStatPoint(Tuple<Integer, Integer> position)
+    private Cell GetStatPoint(Tuple<Integer, Integer> position)
     {
         return GetCellByTuple(position);
     }
     
     /**
-     * Method to clear the matrix
+     * Method to clear all properties of each cell that not is an obstacle in matrix
      * @param _matrix The matrix to clear
      * @return The matrix cleaned
      */
@@ -138,70 +239,138 @@ public class PathFinder
         {
             for (int j = 0; j < ColumnLength; j++)
             {
-                if (_matrix[i][j].getValue() == 0)
-                {
-                    //_matrix[i][j].setFather(null);
-                    _matrix[i][j].setFcost(0);
-                    _matrix[i][j].setGcost(0);
-                    _matrix[i][j].setHcost(0);
-                    //_matrix[i][j].setWay(false);
-                }
+                _matrix[i][j].setFcost(0);
+                _matrix[i][j].setGcost(0);
+                _matrix[i][j].setHcost(0);
+                _matrix[i][j].setWay(false);
+                _matrix[i][j].setFather(null);
             }
         }
         return _matrix;
     }
     
     /**
-     * Method to sort a ArrayList with Cell destinations based in absolut distance between the start point
+     * Method to sort an ArrayList by the shortest distance between each item
      * @param startPoint A cell object that is the starting point
      * @param _destinations An ArrayList of Cells with all destinations
-     * @return A sorted ArrayList of Cells
+     * @return An ArrayList with all destinations sorted by the shortest distance between them
      */
     private ArrayList<Cell> SortDestinations(Cell startPoint, ArrayList<Cell> _destinations)
     {
-        Collections.sort(_destinations, (o1, o2) ->
+        ArrayList<Cell> destinationsSorted = new ArrayList<>();
+        if((startPoint != null) && (_destinations != null && _destinations.size() > 0))
         {
-            return CalcuLateHCost(startPoint, o1) - CalcuLateHCost(startPoint, o2);
-        });
-        return _destinations;
-    }
-    
-    /**
-     * Method to init the search for the short path
-     * @param startPoint A Cell object that is the start point
-     * @param destinations An ArrayList of Cell that the algoritm need to pass by
-     * @return An ArrayList with errors
-     */
-    public ArrayList<String> FindTotalPath(Cell startPoint, ArrayList<Cell> destinations)
-    {
-        destinations = SortDestinations(startPoint, destinations);
-        if((startPoint != null) && (!(destinations.isEmpty()) && (destinations.size() > 0)))
-        {
-            for (Cell endPoint : destinations)
+            if (_destinations.size() == 1)
             {
-                if (FindPath(matrix, startPoint, endPoint))
-                {
-                    startPoint = endPoint;
-                    matrix = CleanMatrix(matrix);
-                }
-                else
-                {
-                    String error = String.format("O caminho entre [%d,%d] e [%d,%d] não foi encontrado;", startPoint.getX(), startPoint.getY(), endPoint.getX(), endPoint.getY());
-                    errors.add(error);
-                }
-            }
-            if(errors.isEmpty())
-            {
-                matrix = HighlightPath(matrix, destinations.get(destinations.size() - 1));
-                return errors;
+                destinationsSorted.add(_destinations.get(0));
             }
             else
             {
-                return errors;
+                Cell destinationWithLeastCost;
+                ArrayList<Tuple<Tuple<Integer, Integer>, Integer>> destinationsCost = new ArrayList<>();
+                _destinations.forEach((Cell destination) ->
+                {
+                    if(FindPath(matrix, startPoint, destination))
+                    {
+                        destinationsCost.add(
+                            new Tuple<>(new Tuple<>(destination.getX(), destination.getY()),
+                            matrix[destination.getX()][ destination.getY()].getFcost()));
+                    }
+                    CleanMatrix(matrix);
+                });
+                if(destinationsCost.size() > 0)
+                {
+                    Collections.sort(destinationsCost, (o1, o2) ->
+                    {
+                        return o1.value - o2.value;
+                    });
+                    destinationWithLeastCost = _destinations.stream().filter(obj -> 
+                        obj.getX() == destinationsCost.get(0).key.key &&
+                        obj.getY() == destinationsCost.get(0).key.value).findFirst().get();
+                    destinationsSorted.add(destinationWithLeastCost);
+                    _destinations.remove(destinationWithLeastCost);
+                    destinationsSorted.addAll(SortDestinations(destinationWithLeastCost, _destinations));
+                }
             }
         }
-        errors.add("startPoint ou lista de destinos nula;");
+        return destinationsSorted;
+    }
+    
+    /**
+     * Method to set the current point of the user
+     * @param currentCell A Tuple that represents the current position of the user
+     * @return An ArrayList of string with errors that occurred during execution of the algorithm, or an empty ArrayList
+     */
+    public ArrayList<String> SetCurrentPoint(Tuple<Integer, Integer> currentCell)
+    {
+        ArrayList<String> errors = new ArrayList<>();
+        this.currentCell = GetStatPoint(currentCell);
+        if(this.currentCell != null)
+        {
+            if (this.currentCell.Equals(nextdestination))
+            {
+                this.destinations.remove(nextdestination);
+                if (destinations.size() > 0)
+                {
+                    nextdestination = this.destinations.get(0);
+                }
+                else
+                {
+                    nextdestination = null;
+                }
+            }
+            if (nextdestination != null)
+            {
+                CleanMatrix(matrix);
+                if (FindPath(this.matrix, this.currentCell, this.nextdestination))
+                {
+                    this.matrix = HighlightPath(this.matrix, this.nextdestination);
+                    ArrayList<Cell> neighbors = FindNeighbors(this.currentCell, DIAGONALLY);
+                    this.nextCell = neighbors.stream().filter((cel) -> cel.isWay()).findFirst().get();
+                    if (this.nextCell == null)
+                    {
+                        errors.add(String.format("Não foi possível encontrar a célula [%d,%d];", this.nextCell.getX(), this.nextCell.getY()));
+                    }
+                }
+                else
+                {
+                    errors.add(String.format("O caminho entre [%d,%d] e [%d,%d] não foi encontrado;", this.currentCell.getX(), this.currentCell.getY(), this.nextdestination.getX(), this.nextdestination.getY()));
+                }
+            }
+            else
+            {
+                nextCell = null;
+            }
+        }
+        else
+        {
+            errors.add(String.format("Não foi possível encontrar a célula [%d,%d];", currentCell.key, currentCell.value));
+        }
         return errors;
+    }
+    
+    /**
+     * @return currentCell
+     */
+    public Cell GetCurrentCell()
+    {
+        return this.currentCell;
+    }
+    
+    /**
+     * @return nextCell
+     */
+    public Cell GetNextCell()
+    {
+        return this.nextCell;
+    }
+    
+    /**
+     * @return nextdestination
+     */
+    public Cell GetNextdestination()
+    {
+        return this.nextdestination;
     }
     
     /**
@@ -211,7 +380,7 @@ public class PathFinder
      * @param endPoint A Cell object that is the end point of the path
      * @return An boolean that represents of the algorithm found the path
      */
-    public boolean FindPath(Cell[][] matrix, Cell startPoint, Cell endPoint)
+    private boolean FindPath(Cell[][] matrix, Cell startPoint, Cell endPoint)
     {
         Cell current;
         boolean found = false;
@@ -221,7 +390,7 @@ public class PathFinder
         do
         {
             current = openList.get(0);
-            if (current.Equals(endPoint)  && current.getValue() == CellValueEnum.ENDPOINT.Value)
+            if (current.Equals(endPoint) && current.getValue() == CellValueEnum.ENDPOINT.Value)
             {
                 found = true;
                 continue;
@@ -232,7 +401,7 @@ public class PathFinder
             }
             openList.remove(0);
             closedList.add(current);
-            ArrayList<Cell> neighborsOfCurrentCell = FindNeighbors(current, true);
+            ArrayList<Cell> neighborsOfCurrentCell = FindNeighbors(current, this.DIAGONALLY);
             for (Cell neighbor : neighborsOfCurrentCell)
             {
                 if ((neighbor.getValue() == CellValueEnum.OBSTACLE.Value) || (closedList.stream().anyMatch(c -> c.Equals(neighbor))))
@@ -364,13 +533,7 @@ public class PathFinder
         while ((cell != null) && (cell.getValue() != CellValueEnum.STARTPOINT.Value))
         {
             _matrix[cell.getX()][cell.getY()].setWay(true);
-            int X = cell.getX();
-            int Y = cell.getY();
-            cell = _matrix[X][Y].getFather(0);
-            if(cell != null)
-            {
-                _matrix[X][Y].getFathers().remove(0);
-            }
+            cell = _matrix[cell.getX()][cell.getY()].getFather();
         }
         return _matrix;
     }

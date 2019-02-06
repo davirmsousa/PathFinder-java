@@ -1,28 +1,32 @@
 package pathfinder.Model;
 
-import java.util.ArrayList;
-
 /**
  * @author Davi Rocha
  */
 public class Cell implements Comparable
 {
+    private int X;
+    private int Y;
     private int Gcost;
     private int Hcost;
     private int Fcost;
     private int Value;
-    private ArrayList<Cell> Fathers;
+    private Cell Father;
     private boolean Way;
-    private int X;
-    private int Y;
 
-    public Cell(ArrayList<Cell> Fathers, int Gcost, int Fcost, int Hcost, boolean IsAWay, int Value, int X, int Y)
+    public Cell()
+    {
+        this.X = -1;
+        this.Y = -1;
+    }
+    
+    public Cell(Cell Father, int Gcost, int Fcost, int Hcost, boolean IsAWay, int Value, int X, int Y)
     {
         this.Gcost = Gcost;
         this.Hcost = Hcost;
         this.Fcost = Fcost;
         this.Value = Value;
-        this.Fathers = Fathers;
+        this.Father = Father;
         this.Way = IsAWay;
         this.X = X;
         this.Y = Y;
@@ -78,31 +82,14 @@ public class Cell implements Comparable
         this.Value = Value;
     }
 
-    public ArrayList<Cell> getFathers()
+    public Cell getFather()
     {
-        return Fathers;
-    }
-
-    public Cell getFather(int index)
-    {
-        if(index >= 0 && index < Fathers.size())
-        {
-            return Fathers.get(index);
-        }
-        else
-        {
-            return null;
-        }
-    }
-
-    public void setFathers(ArrayList<Cell> Fathers)
-    {
-        this.Fathers = Fathers;
+        return this.Father;
     }
 
     public void setFather(Cell Father)
     {
-        this.Fathers.add(Father);
+        this.Father = Father;
     }
 
     public boolean isWay()
@@ -135,5 +122,10 @@ public class Cell implements Comparable
     public boolean Equals(Cell o)
     {
         return (this.X == o.getX()) && (this.Y == o.getY());
+    }
+    
+    public boolean IsEmpty()
+    {
+        return ((this.X == -1) && (this.Y == -1));
     }
 }
